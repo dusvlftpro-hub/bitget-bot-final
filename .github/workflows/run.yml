@@ -1,0 +1,38 @@
+name: Bitget Monitor Final
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # 10분마다 실행
+  workflow_dispatch:      # 수동 실행 버튼
+
+# 👇 봇이 파일을 쓰고 저장할 수 있는 권한 (필수)
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: 파이썬 세팅
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          
+      - name: 라이브러리 설치
+        run: pip install ccxt pandas requests
+        
+      - name: 봇 실행
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python main.py
+        
+      # 👇 기억을 파일로 저장(Commit)하는 단계
+      - name: 상태 저장 (Update Memory)
+        run: |
+          git config --global user.name "BitgetBot"
+          git config --global user.email "bot@noreply.github.com"
+          git add bot_memory.json || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update memory" && git push)
