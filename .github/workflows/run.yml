@@ -1,11 +1,11 @@
-name: Bitget Monitor Final
+name: Bitget Quant Bot
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # 10분마다 실행
+    # 30분 -> 10분으로 변경 (가장 현실적인 최고 속도)
+    - cron: '*/10 * * * *'
   workflow_dispatch:      # 수동 실행 버튼
 
-# 👇 봇이 파일을 쓰고 저장할 수 있는 권한 (필수)
 permissions:
   contents: write
 
@@ -21,7 +21,8 @@ jobs:
           python-version: '3.9'
           
       - name: 라이브러리 설치
-        run: pip install ccxt pandas requests
+        # 수학 계산을 위한 numpy 포함 (필수)
+        run: pip install ccxt pandas requests numpy
         
       - name: 봇 실행
         env:
@@ -29,8 +30,7 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: python main.py
         
-      # 👇 기억을 파일로 저장(Commit)하는 단계
-      - name: 상태 저장 (Update Memory)
+      - name: 상태 저장
         run: |
           git config --global user.name "BitgetBot"
           git config --global user.email "bot@noreply.github.com"
