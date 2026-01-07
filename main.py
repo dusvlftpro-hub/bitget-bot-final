@@ -35,8 +35,12 @@ def save_memory(memory):
         json.dump(memory, f)
 
 def run():
-    print("🚀 분석 시작...")
-    bitget = ccxt.bitget()
+    print("🚀 비트겟 [선물] 시장 분석 시작...")
+    
+    # ⭐ 핵심 변경: 선물(Swap) 시장 데이터 가져오기 설정
+    bitget = ccxt.bitget({
+        'options': {'defaultType': 'swap'} 
+    })
     
     # 3가지 시간대 설정 (4시간, 일봉, 주봉)
     timeframes = {
@@ -51,15 +55,28 @@ def run():
     found_any = False
 
     try:
-        # 거래량 상위 50개 코인 추출 (속도 최적화)
+        # 선물 마켓 정보 로드
         markets = bitget.load_markets()
-        symbols = [s for s in markets if s.endswith('/USDT')]
+        
+        # ⭐ [필터링] USDT 무기한 선물(Linear Perpetual)만 골라내기
+        # Coin-M(반대매매) 선물은 제외하고 USDT 선물만 봅니다.
+        symbols = [
+            s for s in markets 
+            if markets[s].get('linear') == True     # USDT 마진(Linear)
+            and markets[s].get('type') == 'swap'    # 선물(Swap)
+            and markets[s].get('quote') == 'USDT'   # 결제 화폐가 USDT
+        ]
+        
+        # 거래량 상위 50개 코인 추출 (선물은 거래대금 순위가 중요)
         tickers = bitget.fetch_tickers(symbols)
         sorted_tickers = sorted(tickers.items(), key=lambda x: x[1]['quoteVolume'] if x[1]['quoteVolume'] else 0, reverse=True)
         top_symbols = [item[0] for item in sorted_tickers[:50]]
         
+        print(f"거래량 상위 {len(top_symbols)}개 선물 코인 감시 중...")
+
         for symbol in top_symbols:
-            coin_name = symbol.split('/')[0]
+            # 코인명 깔끔하게 정리 (예: BTC/USDT:USDT -> BTC)
+            coin_name = markets[symbol]['base']
             
             # 각 시간봉별로 체크
             for tf, label in timeframes.items():
@@ -80,13 +97,13 @@ def run():
                     if curr_price >= curr_vwma:
                         gap = (curr_price - curr_vwma) / curr_vwma * 100
                         
-                        if gap <= 3.0: # 3% 이내 타이트하게
+                        if gap <= 3.0: # 3% 이내 타이트하게 (선물 타점)
                             # 중복 체크 (지난번 기억에 있었는지?)
                             is_dup = False
                             if tf in last_memory and coin_name in last_memory[tf]:
                                 is_dup = True
                             
-                            # 표시 마크 결정
+                            # 표시 마크
                             mark = "💤중복" if is_dup else "🔥<b>NEW</b>"
                             
                             # 결과 한 줄 만들기
@@ -104,13 +121,11 @@ def run():
         
         # 전송 로직
         if found_any:
-            # 한국 시간(KST) 구하기
             kst_now = datetime.now(timezone(timedelta(hours=9))).strftime("%H:%M")
             
-            msg = f"🦁 <b>[비트겟 VWMA 100 감시]</b> ({kst_now})\n"
-            msg += "조건: 3% 이내 초근접 지지\n"
+            msg = f"🦁 <b>[비트겟 선물 VWMA 100]</b> ({kst_now})\n"
+            msg += "조건: 3% 이내 지지 (롱 타점)\n"
             
-            # 4시간 -> 일봉 -> 주봉 순서로 출력
             order = ['4h', '1d', '1w']
             has_content = False
             
@@ -126,7 +141,6 @@ def run():
             if has_content:
                 send_msg(msg)
                 
-            # 기억 파일 저장 (다음번 중복 체크를 위해)
             save_memory(current_memory)
         else:
             print("조건 만족 없음. 기억 초기화.")
