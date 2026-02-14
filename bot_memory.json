@@ -1,1 +1,1 @@
-{"1h": {"vwma": ["BTC", "OM", "COMP", "XAU", "UNI", "AXS", "WLFI", "XAUT", "IP", "BGB", "PAXG"], "channel": ["XAU", "ASTER", "TSLA", "XAUT", "PAXG"], "best": ["PAXG"]}, "4h": {"vwma": ["XRP", "XAU", "PUMP", "FARTCOIN", "TIA", "FIL", "RENDER", "FET", "S", "XAUT", "PAXG"], "channel": [], "best": []}}
+{"1h": {"vwma": ["BTC", "OM", "COMP", "XAU", "UNI", "AXS", "WLFI", "XAUT", "BGB", "PAXG"], "channel": ["XAU", "ASTER", "TSLA", "XAUT", "PAXG"], "best": ["PAXG"]}, "4h": {"vwma": ["XRP", "XAU", "PUMP", "AVAX", "TIA", "FIL", "FET", "XAUT", "PAXG", "ICP"], "channel": [], "best": []}}
